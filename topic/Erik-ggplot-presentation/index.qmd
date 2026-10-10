@@ -1,0 +1,345 @@
+---
+title: "The Grammar of Graphics with plotnine"
+subtitle: "Topic Presentation"
+author: "Erik Chervonny"
+format:
+  revealjs:
+    width: 1280
+    height: 720
+    slide-number: true
+    preview-links: auto
+    theme: default
+    incremental: false
+jupyter: python3
+execute:
+  warning: false
+---
+
+## My Background
+
+- My name is **Erik Chervonny**, and I’m a Statistics major at UConn. 
+- I was initially an electrical engineering student, but decided to switch majors in my junior year. Currently, I am taking a variety of quantitative and humanistic courses.
+- I grew up in the suburbs of New York, but enjoyed frequently traveling to Manhattan with my friends. I have worked part-time jobs, with my most recent one being in graphic design.
+
+## What is the Grammar of Graphics
+
+- Certain design componenets are common to almost all visualizations.
+- Instead of choosing a chart type, **Grammar of Graphics** builds a **plot** from separate pieces.
+- Leland Wilkinson came up with the idea, and Hadley Wickham used it to make `ggplot2` for the R programming language.
+- **plotnine** is the Python implementation of the **Grammar of Graphics**. 
+
+**Question:** how do we build a plot from data using Grammar of Graphics?
+
+## Installing plotnine
+
+I chose a python implementation of Grammar of Graphics called plotnine. The following command installs plotnine from the command line if you're using a uv package manager for you python virtual environments:
+```{bash}
+uv pip install plotnine
+```
+Otherwise, you can install by running:
+```{bash}
+pip install plotnine
+```
+
+## The Pieces of a Plot {.smaller}
+
+| Piece | What it does | plotnine code |
+|---|---|---|
+| Data | The table we plot | `ggplot(df)` |
+| Mapping | Connects columns to x, y, color, etc. | `aes()` |
+| Objects | The shapes (bars, lines, points) | `geom_*()` |
+| Translations | How values turn into positions or colors | `scale_*()` |
+| Adjustments | Control how shapes are arranged relative to each other | `position_*()` |
+| Subplots | Splits one plot into small panels | `facet_*()` |
+| Projections | The space of the plot | `coord_*()` |
+| Styling | Look of the plot (background, fonts) | `theme_*()` |
+| Calculations | Calculations done before drawing | `stat_*()` |
+
+## Specifying the data {.smaller}
+
+- Each plot starts with passing data to the `ggplot()` function, which has a parameter called data.
+```{python}
+#| echo: true
+import pandas as pd
+import numpy as np
+from plotnine import *
+
+students = pd.DataFrame({
+    "hours_studied": [1, 2, 3, 4, 5, 6],
+    "score": [55, 62, 68, 72, 80, 88],
+    "class_year": ["Freshman", "Sophomore", "Freshman", "Junior", "Sophomore", "Senior"]
+})
+
+students
+ggplot(data=students)
+```
+- Since, data that is the first positional argument, you can also pass a dataframe with `ggplot(students)`.
+- In this case, the plot will be empty since I haven't mapped any variables.
+
+## Using `aes()` mapping {.smaller}
+
+- This function maps **columns** of data on to specified graphical attributes.
+- The following code maps the `hours_studied` and `score` columns/variables to x- and y- coordinates in the plot.
+
+```{python}
+#| echo: true
+(
+    ggplot(data=students, mapping=aes(x="hours_studied", y="score"))
+)
+
+```
+- `aes()` is short for aesthetic.
+
+## Using `geom_*()` objects {.smaller}
+
+- Functions that start with the prefix `geom_*()` specify the kind of geometric objects to add to the plot.
+
+```{python}
+#| echo: true
+(
+    ggplot(data=students, mapping=aes(x="hours_studied", y="score"))
+    + geom_point()
+    + geom_smooth(method="lm", color="blue")
+    + theme(figure_size=(10, 2.8))
+)
+```
+
+- In the code above, `geom_point` creates a scatter plot, and `geom_smooth(method="lm", color="blue")` draws a blue smooth trend line.
+- Ignore `theme()` for now.
+
+## Using `scale_*()` translations {.smaller}
+
+- Functions that start with this prefix customize the sytling of visual elements from the data mapping. 
+
+```{python}
+#| echo: true
+(
+    ggplot(data=students, mapping=aes(x="hours_studied", y="score"))
+    + geom_point()
+    + scale_x_continuous(breaks=[1, 2, 3, 4, 5, 6])
+    + theme(figure_size=(10, 2.8))
+)
+```
+
+- Here, the scale function, `scale_x_continuous()`, is used to customize how numerical values are displayed along the x-axis.
+- Using the break parameter, the scale funciton changes the x-axis by specifying which values should appear as tick marks.
+
+## Using `position_*()` adjustments {.smaller}
+
+- Functions that start with this prefix adjust the position of elements in the plot.
+- For instance, you can have placed side-by-side instead of stacking them by using `position_dodge()`.
+
+```{python}
+#| echo: true
+(
+    ggplot(data=students, mapping=aes(x="class_year", fill="class_year")) 
+    + geom_bar(position=position_dodge())
+    + theme(figure_size=(10, 2.8))
+)
+```
+
+- Here, `position_dodge()` tells `geom_bar()` to arrange the bars side by side.
+
+## Using `facet_*()` subplots {.smaller}
+
+- Functions that start with this prefix split a plot into multiple subplots.
+- The facet funcitons, `facet_grid()` and `facet_wrap()`,, determine how to split the data.
+
+```{python}
+#| echo: true
+(
+    ggplot(data=students, mapping=aes(x="hours_studied", y="score"))
+    + geom_point()
+    + facet_wrap("~class_year")
+    + theme(figure_size=(7, 2.8))
+)
+```
+
+- Here, I made a grid of plots based on the `class_year`.
+
+## Using `coord_*()` projections {.smaller}
+
+- Functions that start with this prefix specify the coordinate system of the plot.
+- You could use `coord_polar()` for plotting using polar coordiante, or `coord_fixed` to ensure that coordinates are evenly spaced.
+
+```{python}
+#| echo: true
+(
+    ggplot(data=students, mapping=aes(x="hours_studied", y="score"))
+    + geom_point()
+    + coord_fixed()
+    + theme(figure_size=(10, 3))
+)
+```
+
+- Here, `coord_fixed()` ensures that the same distance on the x-axis and y-axis is displayed with the same scale.
+
+## Using `theme_*()` styling {.smaller}
+
+- Functions that start with this prefix control the style of all the aspects of the plot that aren't already decided by the data.
+- You can also use the general `theme()` funciton to create new custom themes, and the `element_*()` functions to configure new themes.
+
+```{python}
+#| echo: true
+(
+    ggplot(data=students, mapping=aes(x="hours_studied", y="score"))
+    + geom_point()
+    + theme(
+        figure_size=(10, 2.8),
+        axis_text_x=element_text(size=12),
+        axis_text_y=element_text(size=12),
+        )
+)
+```
+
+- Here, `element_text()` changes the size of the text on the x- and y-axes, and `figure_size` changes the overall size of the plot.
+
+## Using `stat_*()` calculations {.smaller}
+
+- Functions that start with this prefix perform calculations on the data before the plot is drawn.
+- For instance, `stat_summary()` can calculate a summary such as the mean for each group.
+
+```{python}
+#| echo: true
+(
+    ggplot(data=students, mapping=aes(x="class_year", y="score"))
+    + stat_summary(geom="point")
+)
+```
+
+- Here, I used `stat_summary()` to calculate a summary of the scores for each class, then `geom="point"` to display those means as points.
+
+## Putting it All Together in a Basic Template
+
+Almost every plotnine plot has this pattern:
+
+```python
+(ggplot(data, aes(x="column_a", y="column_b"))
++ geom_point()
++ labs(title="My Title")
++ theme_minimal()
+)
+```
+
+- Always put column names in **quotes**, like `"column_a"`.
+- Each `+` adds another layer to the plot.
+- Put everything inside `( )` to split the plot over many lines and make the code more readable.
+- `labs()` lets you add labels like a title 
+- The plot shows up when it is the last line in the code cell.
+
+## Common Geom Objects
+
+| Geom | What it makes |
+|---|---|
+| `geom_point()` | Scatter plot |
+| `geom_line()` | Line plot, often over time |
+| `geom_col()` | Bars with heights we give it |
+| `geom_bar()` | Bars that count the rows for us |
+| `geom_histogram()` | Shows how one number column is spread out |
+| `geom_boxplot()` | Median and quartiles for each group |
+
+- All of these have unique parameters that you must pass.
+
+## Using NYPD 311 Requests {.smaller}
+
+- From the file `311_nypd_lbdwk_2026.csv.zip`, I will use the 4 columns: `Created Date`, `Closed Date`, `Problem`, and `Borough`.
+```{python}
+#| echo: true
+df = pd.read_csv("311_nypd_lbdwk_2026.csv.zip")
+
+# shorten the column name
+df = df.rename(columns={"Problem (formerly Complaint Type)": "Problem"})
+
+# the dates start as text
+df["Created Date"] = pd.to_datetime(df["Created Date"])
+df["Closed Date"] = pd.to_datetime(df["Closed Date"])
+
+df[["Created Date", "Problem", "Borough"]].head()
+```
+
+# Building a Plot Layer by Layer
+
+## Finding the top 5 Problems
+
+```{python}
+#| echo: true
+counts = df["Problem"].value_counts()    # count times each problem appears
+top_names = counts.head(5).index         # names of the 5 biggest
+top = df[df["Problem"].isin(top_names)]  # keep only those rows
+
+counts.head(5) # lists them
+```
+
+## Layer 1: Data and Aesthetics {.smaller}
+
+- `aes()` connects a column to the x axis. Since there is no geometry yet, so **nothing is drawn**.
+-`figure_size` sets how big the plot is.
+
+```{python}
+#| echo: true
+#| fig-align: center
+(
+    ggplot(top, aes(x="Problem"))
+    + theme(figure_size=(10, 3))
+)
+```
+
+## Layer 2: Add a Geometry {.smaller}
+
+- `geom_bar()` draws bars. It **counts the rows**, so I don't need `y`.
+
+```{python}
+#| echo: true
+#| fig-align: center
+(
+    ggplot(top, aes(x="Problem"))
+    + geom_bar()
+    + theme(figure_size=(10, 3))
+)
+```
+
+## Layer 3: Flip the Coordinates {.smaller}
+
+- `coord_flip()` swaps x and y, so the long names are easier to read.
+
+```{python}
+#| echo: true
+#| fig-align: center
+(
+    ggplot(top, aes(x="Problem"))
+    + geom_bar()
+    + coord_flip()
+    + theme(figure_size=(10, 3))
+)
+```
+
+## Layer 4: Labels and Theme {.smaller}
+
+```{python}
+#| echo: true
+#| fig-align: center
+(
+    ggplot(top, aes(x="Problem"))
+    + geom_bar(fill="steelblue")
+    + coord_flip()
+    + labs(title="Top 5 NYPD 311 Problems",
+        x="Problem Type",
+        y="Number of Requests")
+        + theme_minimal()
+        + theme(figure_size=(10, 3))
+)
+```
+
+- The plots shows that illegal parking is the most common problem with 13,370 requests.
+- The bars are the counts, so the longer bar represents more requests.
+
+## AI Disclosure
+
+**AI disclosure:** I used ChatGPT (OpenAi) to help me fix the plotnine code mistakes, help with installation problems, and rendering issues. I ran the code and wrote the explanations myself
+
+## Sources
+- [NYC Open Data](https://data.cityofnewyork.us/Social-Services/311-Service-Requests-from-2020-to-Present/erm2-nwe9/about_data)
+- [Plotnine documentation](https://plotnine.org)
+- [Quarto presentations](https://quarto.org/docs/presentations/)
+- [RevealJS format options](https://quarto.org/docs/presentations/revealjs/)
+- [Quarto computations with Python](https://quarto.org/docs/computations/python.html)
