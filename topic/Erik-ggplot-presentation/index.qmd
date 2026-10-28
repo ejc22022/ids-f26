@@ -3,10 +3,10 @@ title: "The Grammar of Graphics with plotnine"
 subtitle: "Topic Presentation"
 author: "Erik Chervonny"
 bibliography: references.bib
-nocite: |
-  @*
+nocite: '@*'
 format:
   revealjs:
+    fig-format: svg
     width: 1280
     height: 720
     slide-number: true
@@ -28,24 +28,13 @@ execute:
 
 - Certain design componenets are common to almost all visualizations.
 - Instead of choosing a chart type, **Grammar of Graphics** builds a **plot** from separate pieces.
-- Leland Wilkinson came up with the idea, and Hadley Wickham used it to make `ggplot2` for the R programming language.
+- Leland Wilkinson came up with the idea, and Hadley Wickham used it to make `ggplot2` for the R programming language[@ggplot2-book].
 - **plotnine** is the Python implementation of the **Grammar of Graphics**[@plotnine-docs]. 
 
 **Question:** how do we build a plot from data using Grammar of Graphics?
 
-## Installing plotnine
-
-I chose a python implementation of Grammar of Graphics called plotnine. The following command installs plotnine from the command line if you're using a uv package manager for you python virtual environments:
-```{bash}
-uv pip install plotnine
-```
-Otherwise, you can install by running:
-```{bash}
-pip install plotnine
-```
-
-## Specifying the data {.smaller}
-The file `illegal_parking_lbdwk_2026.feather` is the data file I will be using. It has the **Illegal Parking** requests that were sent to the NYPD during Labor Day week 2026 (September 6 to September 12).
+## Specifying the data Part 1 {.smaller}
+The main dataset I will be using is `illegal_parking_lbdwk_2026.feather` [@ids-book-chapter5]. It has extracted and standardized **Illegal Parking** requests that were sent to the NYPD during Labor Day week 2026 (September 6 to September 12)[@nyc-open-data-311].
 
 - Each row represents a 311 request.
 - I primarily will use the columns/variables: `created_at`, `problem_detail`, `borough`, and `closure_hours`.
@@ -56,9 +45,30 @@ import numpy as np
 from plotnine import *
 
 # Reads feather file
-parking = pd.read_feather("../data/illegal_parking_lbdwk_2026.feather")
+parking = pd.read_feather("../../data/illegal_parking_lbdwk_2026.feather")
 
-parking[["created_at", "problem_detail", "borough", "closure_hours"]].head()
+parking[["created_at", "problem_detail", "borough", "closure_hours"]].head(5)
+```
+
+## Specifying the data Part 2 {.smaller}
+
+I also use `nyc_borough_boundaries.geojson` to display borough boundaries on plots in the faceting slides [@nyc-borough-boundaries].
+
+- `GeoPandas` extends pandas with support for geographic data, such as maps and boundaries [@geopandas-docs].
+- Here, I use `gpd.read_file()` to load a GeoJSON file containing New York City's borough boundaries.
+- I also standardize row values of the borough columns, so that they match the borough names in the main data set, `illegal_parking_lbdwk_2026.feather` [@ids-book-chapter5].
+
+```{python}
+#| echo: true
+import geopandas as gpd
+
+boundaries = gpd.read_file("../../data/nyc_borough_boundaries.geojson")
+
+boundaries = boundaries.rename(columns={"boroname": "borough"})
+boundaries["borough"] = boundaries["borough"].str.upper()
+
+print(boundaries["borough"].unique())
+print(parking["borough"].unique())
 ```
 
 ## The Pieces of a Plot {.smaller}
@@ -70,10 +80,10 @@ parking[["created_at", "problem_detail", "borough", "closure_hours"]].head()
 | Objects | The shapes (bars, lines, points) | `geom_*()` |
 | Translations | How values turn into positions or colors | `scale_*()` |
 | Adjustments | Control how shapes are arranged relative to each other | `position_*()` |
-| Subplots | Splits one plot into small panels | `facet_*()` |
 | Projections | The space of the plot | `coord_*()` |
 | Styling | Look of the plot (background, fonts) | `theme_*()` |
 | Calculations | Calculations done before drawing | `stat_*()` |
+| Subplots | Splits one plot into small panels | `facet_*()` |
 
 ## Passing the data into a plot {.smaller}
 
@@ -133,6 +143,7 @@ parking[["created_at", "problem_detail", "borough", "closure_hours"]].head()
 | `geom_bar()` | Bar chart that count the rows for us |
 | `geom_histogram()` | Shows distribution of data using bins |
 | `geom_boxplot()` | Shows median and quartiles for each group |
+| `geom_map()` | Draws polygons representing areas |
 
 - All of these have unique parameters that you must pass.
 
@@ -151,8 +162,8 @@ parking[["created_at", "problem_detail", "borough", "closure_hours"]].head()
 )
 ```
 
-- Here, the scale function, `scale_x_log10()`, changes the y-axis to a log scale, so each tick mark is 10 times bigger than the last one.
-- The scale function, `scale_y_continuous()`, is used to customize how numerical values are displayed along the x-axis.
+- Here, the scale function, `scale_x_log10()`, changes the x-axis to a log scale, so each tick mark is 10 times bigger than the last one.
+- The scale function, `scale_y_continuous()`, is used to customize how numerical values are displayed along the y-axis.
 - Using the break parameter, the scale function changes the x-axis by specifying which values should appear as tick marks.
 - The histogram shows the distribution of closure times across all requests in parking.
 
@@ -221,60 +232,6 @@ Here is a larger view of the plot:
 | `position_stack()` | Stacks objects on top of each other |
 | `position_dodge()` | Places objects side by side |
 | `position_jitter()` | Adds small random offsets to positions |
-
-## Using `facet_*()` subplots {.smaller}
-
-- Functions that start with this prefix split a plot into multiple subplots.
-- The facet functions, `facet_grid()` and `facet_wrap()`, determine how to split the data.
-
-```{python}
-#| echo: true
-(
-    ggplot(data=parking, mapping=aes(x="longitude", y="latitude"))
-    + geom_point(size=1, alpha=0.5)
-    + facet_wrap("~borough", ncol=5, scales="free")
-    + theme(figure_size=(14, 2.4))
-)
-```
-
-- Here, I made a grid of different subplots, which are based on the `borough` column, so borough gets a plot of where requests were made.
-- `scales="free"` lets each panel have its own x- and y-axis.
-- You need to put `~` before the column name in the `facet_wrap` function.
-
-## Plot for `facet_*()` {.smaller}
-
-Here is a larger view of the plot:
-
-```{python}
-#| echo: true
-(
-    ggplot(data=parking, mapping=aes(x="longitude", y="latitude"))
-    + geom_point(size=0.5, alpha=0.3)
-    + facet_wrap("~borough", ncol=5, scales="free")
-    + theme(figure_size=(14, 5))
-)
-```
-
-## Combined plots from `facet_*()` {.smaller}
-
-Here is a plot of the combined Borough subplots:
-
-```{python}
-#| echo: true
-(
-    ggplot(data=parking, mapping=aes(x="longitude", y="latitude", fill="borough"))
-    + geom_point(size=1, alpha=0.5)
-    + theme(figure_size=(10, 5))
-)
-```
-
-## Common `facet_*()` Functions {.smaller}
-
-| Function | What it does |
-|---|---|
-| `facet_wrap()` | Arranges panels by variables |
-| `facet_grid()` | Arranges panels in rows and columns |
-| `facet_null()` | Displays a single panel, so essentially does no faceting |
 
 ## Using `coord_*()` projections {.smaller}
 
@@ -410,7 +367,8 @@ Here is the plot from the previous slide:
 | `element_line()` | Controls visual line |
 | `element_rect()` | Controls rectangular background and borders |
 | `element_blank()` | Hides visual element |
-| `theme_minimal()` | Removes unnecessary background elements |
+| `theme_minimal()` | Removes unnecessary background elements, but retains gridline |
+| `theme_void()` | Removes all background elements |
 
 ## Using `stat_*()` calculations {.smaller}
 
@@ -460,6 +418,100 @@ Here is the plot from the previous slide:
 | `stat_boxplot()` | Calculates statistics used to construct a boxplot |
 | `stat_density()` | Estimates distribution density of data |
 
+## Using `facet_*()` subplots Part 1 {.smaller}
+
+- This map shows requests across all five boroughs in a single plot, but they can be separated using the faceting functions to examine eac borough separately.
+
+```{python}
+#| echo: true
+#| output: false
+(
+    ggplot()
+    + geom_map(data=boundaries, fill="white", color="gray")
+    + geom_point(data=parking,
+                 mapping=aes(x="longitude", y="latitude", color="borough"),
+                 size=0.5, alpha=0.4, show_legend=False)
+    + coord_equal()
+    + theme_minimal()
+    + theme(figure_size=(14, 5))
+)
+```
+
+- Here, `geom_map()` uses the boundaries dataset to draw the borough boundaries, and `geom_point()` uses the parking dataset to add the locations of illegal parking requests as points.
+
+## Unfaceted plot of NYC Boroughs {.smaller}
+
+```{python}
+#| echo: true
+(
+    ggplot()
+    + geom_map(data=boundaries, fill="white", color="gray")
+    + geom_point(data=parking,
+                 mapping=aes(x="longitude", y="latitude", color="borough"),
+                 size=0.5, alpha=0.4, show_legend=False)
+    + coord_equal()
+    + theme_minimal()
+    + theme(figure_size=(14, 5))
+)
+```
+
+## Using `facet_*()` subplots Part 2 {.smaller}
+
+- Functions that start with this prefix split a plot into multiple subplots.
+- The facet functions, `facet_grid()` and `facet_wrap()`, determine how to split the data.
+
+```{python}
+#| echo: true
+#| output: false
+#| fig-align: center
+(
+    ggplot()
+    + geom_map(data=boundaries, fill="white", color="gray")
+    + geom_point(data=parking,
+                 mapping=aes(x="longitude", y="latitude", color="borough"),
+                 size=0.5, alpha=0.4, show_legend=False)
+    + facet_wrap("~borough", ncol=5, scales="free")
+    + coord_equal()
+    + theme_minimal()
+    + theme(figure_size=(14, 5))
+)
+```
+
+- Here, I used `facet_wrap()` to create a subplot for each borough column.
+- You need to put `~` before the column name in the `facet_wrap` function.
+- `ncol=5` arranges the panels in five columns so they don't stack.
+- `scales="free"` lets each panel have its own x- and y-axis.
+
+## Faceted plot of NYC Boroughs {.smaller}
+
+```{python}
+#| echo: false
+#| output: true
+#| fig-align: center
+(
+    ggplot()
+    + geom_map(data=boundaries, fill="white", color="gray")
+    + geom_point(data=parking,
+                 mapping=aes(x="longitude", y="latitude", color="borough"),
+                 size=0.5, alpha=0.4, show_legend=False)
+    + facet_wrap("~borough", ncol=5, scales="free")
+    + coord_equal()
+    + theme_minimal()
+    + theme(figure_size=(14, 5))
+)
+```
+
+- Each subplot shows the locations of illegal parking requests within a different borough.
+- Separating the boroughs like this makes it easier to see how requests are distributed within each borough.
+
+## Common `facet_*()` Functions {.smaller}
+
+| Function | What it does |
+|---|---|
+| `facet_wrap()` | Arranges panels by variables |
+| `facet_grid()` | Arranges panels in rows and columns |
+| `facet_null()` | Displays a single panel, so essentially does no faceting |
+
 ## Putting it All Together in a Basic Template {.smaller}
 
 Almost every plotnine plot has this pattern:
@@ -477,10 +529,8 @@ Almost every plotnine plot has this pattern:
 - Each `+` adds another layer to the plot.
 - Put everything inside `( )` to split the plot over many lines and make the code more readable.
 - `labs()` lets you add labels like a title 
-- `theme_minimal()` removes unnecessary background elements, gridlines, and borders, focusing attention on the data.
+- `theme_minimal()` removes some unnecessary background elements, helping to focus attention on the data.
 - The plot shows up when it is the last line in the code cell.
-
-# Building a Plot Layer by Layer
 
 ## Finding Top Problem Details {.smaller}
 
@@ -527,7 +577,7 @@ top.head()
 
 - `scale_y_log10()` makes a logarithmic y-axis so it is easier to see differences in closure times.
 - `coord_flip()` swaps the x- and y-axes, so the borough labels are easier to read.
-- `lab()` added title and variables labels, `theme_minimal()` cleans up the plot.
+- `labs()` added title and variables labels, `theme_minimal()` cleans up the plot.
 
 ```{python}
 #| echo: true
@@ -602,8 +652,8 @@ top.head()
 ## Conclusion
 
 - The **Grammar of Graphics** allows you to build plots by combining separeate componenets. This has offers many advantages over more traditional methods, such as choosing a chart type, since it allows for more dynamic manipulation of plots without rewriting everything.
-- Using the **plotline** package, I was able to make use of these features in the python language, meshing well with my data science workflow.
-- Thus, by understanding components and how to build plots step by step, **plotline** makes it easier to create and interpret visualizations in python.
+- Using the **plotnine** package, I was able to make use of these features in the python language, meshing well with my data science workflow.
+- Thus, by understanding components and how to build plots step by step, **plotnine** makes it easier to create and interpret visualizations in python.
 
 ## AI Disclosure
 
@@ -612,9 +662,8 @@ top.head()
 - Help with installation problems involving plotnine
 - Debugging rendering issues
 - Advice on using log scales to make data more readable
-
+- How to use geopandas to add a map for boroughs.
 
 I ran the code and wrote the explanations myself.
 
 ## References
-

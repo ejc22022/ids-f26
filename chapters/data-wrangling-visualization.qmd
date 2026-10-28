@@ -23,3 +23,14 @@ and claims that are proportionate to the evidence.
 
 This example demonstrates a focused explanation, a reproducible figure, and
 careful interpretation of association and causation.
+
+**Topic presentation:**
+[Data Manipulation with Pandas](../topic/ong-pandas/) by Enrico Ong
+
+Presented by Enrico Ong. This presentation uses FiveThirtyEight's college majors data to show four
+pandas verbs: select, filter, create, and group. It ends by checking how many
+rows each summary used and what the result does not show.
+
+[Grammar of Graphics with Plotnine](../topic/Erik-ggplot-presentation/) by Erik Chervonny
+
+This presentation uses illegal parking requests data that was extracted from 311 service requests from NYC open source public data. It shows how to use functions from the plotnine package library to build modular plots and explains its advantages over traditional methods.
